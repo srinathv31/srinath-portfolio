@@ -164,6 +164,7 @@ void main(){
     `;
 
     function compile(type: number, src: string, label: string) {
+      if (!gl) throw new Error("WebGL context not available");
       const s = gl.createShader(type)!;
       gl.shaderSource(s, src);
       gl.compileShader(s);
@@ -173,6 +174,7 @@ void main(){
       return s;
     }
     function program(vs: WebGLShader, fs: WebGLShader) {
+      if (!gl) throw new Error("WebGL context not available");
       const p = gl.createProgram()!;
       gl.attachShader(p, vs);
       gl.attachShader(p, fs);
@@ -226,6 +228,7 @@ void main(){
     const tileD = 1200; // depth of tile
 
     function rebuild() {
+      if (!canvas || !gl) return;
       // Calculate base grid size from spacing
       const w = Math.max(1, Math.floor(canvas.width / spacing));
       const h = Math.max(1, Math.floor(canvas.height / (spacing * 0.7))); // a bit denser in depth
@@ -249,6 +252,7 @@ void main(){
     }
 
     function resize() {
+      if (!canvas || !gl) return;
       const w = Math.floor(window.innerWidth * DPR);
       const h = Math.floor(window.innerHeight * DPR);
       if (canvas.width !== w || canvas.height !== h) {
@@ -331,6 +335,7 @@ void main(){
       pitch = 0.15; // Match initial pitch
     const zPush = -50.0; // Match uZPush value
     function screenToWorldTile(clientX: number, clientY: number) {
+      if (!canvas) return [0.5, 0.5] as const;
       const rect = canvas.getBoundingClientRect();
       const nx = -(((clientX - rect.left) / rect.width) * 2 - 1); // -1..1 (negated to match shader flip)
       const ny = ((clientY - rect.top) / rect.height) * 2 - 1; // -1..1
@@ -421,6 +426,7 @@ void main(){
     const start = now();
     let rafId = 0;
     function frame() {
+      if (!canvas || !gl) return;
       const t = now() - start;
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.uniform2f(loc.uRes!, canvas.width, canvas.height);
