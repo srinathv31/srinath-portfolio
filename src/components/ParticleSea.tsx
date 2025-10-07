@@ -506,7 +506,7 @@ void main(){
         aria-hidden="true"
       />
       {/* Diagnostics box (optional) */}
-      <div
+      {/* <div
         ref={diagRef}
         style={{
           position: "fixed",
@@ -525,7 +525,7 @@ void main(){
           whiteSpace: "pre-wrap",
         }}
         aria-live="polite"
-      />
+      /> */}
       {/* Helper text */}
       <div
         style={{

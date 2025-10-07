@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-:root {
+/* :root {
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -18,9 +18,60 @@
     --foreground: #ededed;
   }
 }
+*/
 
+:root {
+  --bg: #0b0f1a;
+}
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+}
+body {
+  margin: 0;
+  overflow: hidden;
+  background: radial-gradient(
+    1200px 800px at 50% -10%,
+    #11193a 0%,
+    var(--bg) 55%
+  );
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    Helvetica, Arial;
+  color: #cbd5e1;
+}
+
+/* Hero animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+.animate-slide-in-delay {
+  animation: slideIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0.6s;
+  opacity: 0;
+}
+
+.animate-slide-in-delay-2 {
+  animation: slideIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0.8s;
+  opacity: 0;
+}
+
+.animate-slide-in-delay-3 {
+  animation: slideIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 1s;
+  opacity: 0;
 }
