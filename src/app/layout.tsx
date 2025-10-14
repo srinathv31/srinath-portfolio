@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Lato } from "next/font/google";
 import "./globals.css";
 
@@ -11,6 +11,10 @@ const lato = Lato({
 export const metadata: Metadata = {
   title: "Srinath Venkatesh",
   description: "Website by Srinath Venkatesh",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b0f1a",
 };
 
 export default function RootLayout({
