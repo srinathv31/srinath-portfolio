@@ -307,38 +307,41 @@ void main(){
     gl.uniform1f(loc.uMouseActive, 0.0); // initially no mouse
     gl.uniform2f(loc.uMouse, 0.5, 0.5);
 
-    let scrollX = 0,
+    const scrollX = 0,
       scrollY = 0; // tile-space scroll (x,z)
     let mouseX = 0.5,
       mouseY = 0.5; // mouse position in tile space
     let mouseActive = false;
 
-    // ----- Ripples -----
-    const MAX_R = 6;
-    const rip = new Float32Array(MAX_R * 4);
-    let rCount = 0;
-    function addRipple(nx: number, ny: number) {
-      for (let i = MAX_R - 1; i > 0; i--) {
-        rip[i * 4 + 0] = rip[(i - 1) * 4 + 0];
-        rip[i * 4 + 1] = rip[(i - 1) * 4 + 1];
-        rip[i * 4 + 2] = rip[(i - 1) * 4 + 2];
-        rip[i * 4 + 3] = rip[(i - 1) * 4 + 3];
-      }
-      rip[0] = nx;
-      rip[1] = ny;
-      rip[2] = now();
-      rip[3] = 1.2;
-      rCount = Math.min(rCount + 1, MAX_R);
-    }
+    // ----- Time tracking -----
     function now() {
       return performance.now() / 1000;
     }
+    const start = now();
+
+    // ----- Ripples (simple rotating buffer) -----
+    const MAX_R = 6;
+    const rip = new Float32Array(MAX_R * 4);
+    // Initialize all ripples with very old start times so they're expired
+    for (let i = 0; i < MAX_R; i++) {
+      rip[i * 4 + 2] = -999; // start time far in the past
+      rip[i * 4 + 3] = 1.2; // life duration
+    }
+    let rCount = 0;
+    let nextSlot = 0; // Rotating index for next ripple
+    function addRipple(nx: number, ny: number) {
+      const idx = nextSlot * 4;
+      rip[idx + 0] = nx;
+      rip[idx + 1] = ny;
+      rip[idx + 2] = now() - start; // Store RELATIVE time, not absolute
+      rip[idx + 3] = 1.2;
+
+      nextSlot = (nextSlot + 1) % MAX_R;
+      if (rCount < MAX_R) rCount++;
+    }
 
     // Screen -> tile coords for click ripples
-    let dragging = false,
-      lastX = 0,
-      lastY = 0,
-      pitch = 0.15; // Match initial pitch
+    const pitch = 0.15; // Match initial pitch
     const zPush = -50.0; // Match uZPush value
     function screenToWorldTile(clientX: number, clientY: number) {
       if (!canvas) return [0.5, 0.5] as const;
@@ -379,29 +382,12 @@ void main(){
     }
 
     canvas.addEventListener("pointerdown", (e) => {
-      dragging = e.button === 1 || e.shiftKey; // MMB or shift-drag to look
-      lastX = e.clientX;
-      lastY = e.clientY;
-      if (!dragging) {
-        const [u, v] = screenToWorldTile(e.clientX, e.clientY);
-        // Store ripple position relative to current scroll so it stays fixed
-        const ripX = (((u - scrollX) % 1) + 1) % 1;
-        const ripY = (((v - scrollY) % 1) + 1) % 1;
-        addRipple(ripX, ripY);
-      }
+      const [u, v] = screenToWorldTile(e.clientX, e.clientY);
+      // Store ripple position relative to current scroll so it stays fixed
+      const ripX = (((u - scrollX) % 1) + 1) % 1;
+      const ripY = (((v - scrollY) % 1) + 1) % 1;
+      addRipple(ripX, ripY);
     });
-    window.addEventListener("pointermove", (e) => {
-      if (!dragging) return;
-      const dx = e.clientX - lastX;
-      const dy = e.clientY - lastY;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      pitch = Math.max(-0.3, Math.min(0.4, pitch + dy * -0.002)); // Allow looking up and down
-      gl.uniform1f(loc.uPitch!, pitch);
-      scrollX += dx * 0.0006; // slight lateral drift when looking
-    });
-    window.addEventListener("pointerup", () => (dragging = false));
-    window.addEventListener("pointercancel", () => (dragging = false));
 
     window.addEventListener(
       "wheel",
@@ -429,7 +415,6 @@ void main(){
     });
 
     // ----- Animation -----
-    const start = now();
     let rafId = 0;
     function frame() {
       if (!canvas || !gl) return;
@@ -438,9 +423,7 @@ void main(){
       gl.uniform2f(loc.uRes!, canvas.width, canvas.height);
       gl.uniform1f(loc.uTime!, t);
 
-      // Endless forward drift along Z, slight sideways wander
-      scrollY = (scrollY + 0.008) % 1.0; // Slower forward movement
-      scrollX = (scrollX + Math.sin(t * 0.1) * 0.0002) % 1.0; // Gentle wander
+      // Keep scroll position static (no automatic movement)
       gl.uniform2f(loc.uScroll!, scrollX, scrollY);
 
       gl.uniform1i(loc.uRCnt!, rCount);
@@ -533,21 +516,6 @@ void main(){
         }}
         aria-live="polite"
       /> */}
-      {/* Helper text */}
-      <div
-        style={{
-          position: "fixed",
-          left: 12,
-          bottom: 12,
-          fontSize: 12,
-          opacity: 0.75,
-          userSelect: "none",
-          letterSpacing: ".02em",
-        }}
-      >
-        Sea-level particles: hover = reactive • click / tap to ripple • wheel =
-        density • Shift+drag or MMB = look
-      </div>
     </>
   );
 }
