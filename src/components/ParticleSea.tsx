@@ -253,8 +253,14 @@ void main(){
 
     function resize() {
       if (!canvas || !gl) return;
-      const w = Math.floor(window.innerWidth * DPR);
-      const h = Math.floor(window.innerHeight * DPR);
+      // Use the larger of window dimensions or document dimensions to ensure full coverage
+      const w = Math.floor(
+        Math.max(window.innerWidth, document.documentElement.clientWidth) * DPR
+      );
+      const h = Math.floor(
+        Math.max(window.innerHeight, document.documentElement.clientHeight) *
+          DPR
+      );
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w;
         canvas.height = h;
@@ -498,9 +504,10 @@ void main(){
         ref={canvasRef}
         style={{
           position: "fixed",
-          inset: 0,
-          width: "100vw",
-          height: "100vh",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
           outline: "none",
         }}
         aria-hidden="true"

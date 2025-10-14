@@ -2,7 +2,7 @@ import ParticleSea from "@/components/ParticleSea";
 
 export default function HomePage() {
   return (
-    <main className="relative min-h-screen">
+    <main className="relative h-full w-full overflow-y-auto overflow-x-hidden">
       <ParticleSea />
 
       {/* Hero Section */}

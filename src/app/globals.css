@@ -26,6 +26,7 @@
 
 html {
   background: var(--bg);
+  height: 100%;
   min-height: 100vh;
   min-height: -webkit-fill-available;
 }
@@ -33,11 +34,13 @@ html {
 html,
 body {
   height: 100%;
+  width: 100%;
+  position: fixed;
+  overflow: hidden;
 }
 
 body {
   margin: 0;
-  overflow: hidden;
   background: radial-gradient(
     1200px 800px at 50% -10%,
     #11193a 0%,
