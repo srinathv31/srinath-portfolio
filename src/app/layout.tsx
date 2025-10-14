@@ -11,6 +11,10 @@ const lato = Lato({
 export const metadata: Metadata = {
   title: "Srinath Venkatesh",
   description: "Website by Srinath Venkatesh",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
