@@ -224,7 +224,7 @@ void main(){
     let positions = new Float32Array(0);
     let count = 0;
     const buffer = gl.createBuffer()!;
-    const tileW = 900; // narrower tile to keep within FOV
+    const tileW = 1600; // much wider tile for seamless horizontal coverage
     const tileD = 1200; // depth of tile
 
     function rebuild() {
@@ -234,8 +234,8 @@ void main(){
       const h = Math.max(1, Math.floor(canvas.height / (spacing * 0.7))); // a bit denser in depth
 
       // Ensure minimum columns on narrow screens to avoid "line" effect
-      const minCols = 25; // minimum columns regardless of screen width
-      const cols = Math.max(minCols, w + 6);
+      const minCols = 60; // minimum columns regardless of screen width
+      const cols = Math.max(minCols, w + 80); // large extra margin for seamless side-to-side coverage
       const rows = h + 8;
 
       count = cols * rows;
