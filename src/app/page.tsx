@@ -1,9 +1,15 @@
 import ParticleSea from "@/components/ParticleSea";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function HomePage() {
   return (
     <main className="relative h-full w-full overflow-y-auto overflow-x-hidden">
       <ParticleSea />
+
+      {/* Theme toggle */}
+      <div className="fixed top-6 right-6 z-50 animate-fade-up-4">
+        <ThemeToggle />
+      </div>
 
       {/* Main content grid */}
       <div className="relative z-10 min-h-screen pointer-events-none">

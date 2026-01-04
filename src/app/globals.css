@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Warm dark palette */
+  /* Warm dark palette (default) */
   --bg-deep: #0f0d0a;
   --bg: #1a1814;
   --bg-elevated: #252119;
@@ -19,6 +19,23 @@
   /* Fonts */
   --font-display: var(--font-display), "Cormorant Garamond", Georgia, serif;
   --font-body: var(--font-body), "DM Sans", system-ui, sans-serif;
+}
+
+[data-theme="light"] {
+  /* Warm light palette */
+  --bg-deep: #faf8f5;
+  --bg: #f5f2ed;
+  --bg-elevated: #ebe6de;
+
+  /* Text colors - warm dark tones */
+  --text-primary: #2a2520;
+  --text-secondary: #5c544a;
+  --text-muted: #8a8078;
+
+  /* Accent - deeper coral for light mode contrast */
+  --accent: #c45d3a;
+  --accent-soft: rgba(196, 93, 58, 0.12);
+  --accent-glow: rgba(196, 93, 58, 0.3);
 }
 
 html {

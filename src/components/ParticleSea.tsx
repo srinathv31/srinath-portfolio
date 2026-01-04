@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTheme } from "next-themes";
 
 export default function ParticleSea() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const diagRef = useRef<HTMLDivElement | null>(null);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     // ---- run only in the browser after mount ----
@@ -283,8 +285,11 @@ void main(){
     gl.disable(gl.DEPTH_TEST);
 
     // ----- Uniforms (static-ish) -----
-    // Warm amber color to match the editorial palette
-    const color = [0xd4 / 255, 0xa5 / 255, 0x74 / 255];
+    // Theme-aware particle color
+    const isDark = resolvedTheme !== "light";
+    const color = isDark
+      ? [0xd4 / 255, 0xa5 / 255, 0x74 / 255] // Warm amber for dark mode
+      : [0x8a / 255, 0x70 / 255, 0x58 / 255]; // Deeper brown for light mode
     gl.uniform3fv(loc.uColor, color);
     gl.uniform1f(loc.uAmp, 15.0 * DPR); // Increased wave amplitude for more dramatic effect
     gl.uniform1f(
@@ -478,7 +483,7 @@ void main(){
       gl.bindBuffer(gl.ARRAY_BUFFER, null);
       gl.useProgram(null);
     };
-  }, []);
+  }, [resolvedTheme]);
 
   return (
     <>
