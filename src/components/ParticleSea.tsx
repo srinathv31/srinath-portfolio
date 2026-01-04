@@ -279,17 +279,22 @@ void main(){
     gl.vertexAttribPointer(loc.aPos as number, 2, gl.FLOAT, false, 0, 0);
 
     // ----- GL State -----
+    const isDark = resolvedTheme !== "light";
     gl.clearColor(0, 0, 0, 0);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+    // Additive blending for dark mode (glowing effect), standard alpha for light mode (solid particles)
+    if (isDark) {
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+    } else {
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    }
     gl.enable(gl.BLEND);
     gl.disable(gl.DEPTH_TEST);
 
     // ----- Uniforms (static-ish) -----
     // Theme-aware particle color
-    const isDark = resolvedTheme !== "light";
     const color = isDark
       ? [0xd4 / 255, 0xa5 / 255, 0x74 / 255] // Warm amber for dark mode
-      : [0x8a / 255, 0x70 / 255, 0x58 / 255]; // Deeper brown for light mode
+      : [0x4a / 255, 0x38 / 255, 0x28 / 255]; // Dark brown for light mode (better contrast)
     gl.uniform3fv(loc.uColor, color);
     gl.uniform1f(loc.uAmp, 15.0 * DPR); // Increased wave amplitude for more dramatic effect
     gl.uniform1f(
