@@ -283,7 +283,8 @@ void main(){
     gl.disable(gl.DEPTH_TEST);
 
     // ----- Uniforms (static-ish) -----
-    const color = [0x69 / 255, 0xe5 / 255, 0xff / 255];
+    // Warm amber color to match the editorial palette
+    const color = [0xd4 / 255, 0xa5 / 255, 0x74 / 255];
     gl.uniform3fv(loc.uColor, color);
     gl.uniform1f(loc.uAmp, 15.0 * DPR); // Increased wave amplitude for more dramatic effect
     gl.uniform1f(
