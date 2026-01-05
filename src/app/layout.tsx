@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ViewportFix } from "@/components/ViewportFix";
@@ -21,14 +21,6 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Srinath Venkatesh",
   description: "Website by Srinath Venkatesh",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-  },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#1a1814",
 };
 
 export default function RootLayout({
