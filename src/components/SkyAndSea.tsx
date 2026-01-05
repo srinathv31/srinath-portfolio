@@ -167,10 +167,12 @@ export default function SkyAndSea() {
     const skyLineFrag = `
       precision mediump float;
       uniform vec3 uLineColor;
+      uniform float uIsDark;
       varying float vLineAlpha;
 
       void main() {
-        gl_FragColor = vec4(uLineColor * 0.8, vLineAlpha * 0.3);
+        float alphaMultiplier = uIsDark > 0.5 ? 0.3 : 0.5;
+        gl_FragColor = vec4(uLineColor, vLineAlpha * alphaMultiplier);
       }
     `;
 
@@ -394,6 +396,7 @@ export default function SkyAndSea() {
       aLinePos: gl.getAttribLocation(skyLineProgram, "aLinePos"),
       aLineAlpha: gl.getAttribLocation(skyLineProgram, "aLineAlpha"),
       uLineColor: gl.getUniformLocation(skyLineProgram, "uLineColor"),
+      uIsDark: gl.getUniformLocation(skyLineProgram, "uIsDark"),
     };
 
     const seaLocs = {
@@ -671,10 +674,10 @@ export default function SkyAndSea() {
     const colors = {
       skyParticle: isDark
         ? [0xd4 / 255, 0xa5 / 255, 0x74 / 255]
-        : [0x5a / 255, 0x48 / 255, 0x38 / 255],
+        : [0x3a / 255, 0x2a / 255, 0x1a / 255], // Dark brown for light mode
       skyLine: isDark
         ? [0xe0 / 255, 0x78 / 255, 0x56 / 255]
-        : [0x7a / 255, 0x5a / 255, 0x45 / 255],
+        : [0x4a / 255, 0x3a / 255, 0x2a / 255], // Dark brown lines for light mode
       sea: isDark
         ? [0xd4 / 255, 0xa5 / 255, 0x74 / 255]
         : [0x6a / 255, 0x50 / 255, 0x38 / 255], // Slightly brighter brown for better visibility
@@ -871,6 +874,7 @@ export default function SkyAndSea() {
         gl.vertexAttribPointer(skyLineLocs.aLineAlpha, 1, gl.FLOAT, false, 12, 8);
 
         gl.uniform3fv(skyLineLocs.uLineColor, colors.skyLine);
+        gl.uniform1f(skyLineLocs.uIsDark, isDark ? 1.0 : 0.0);
         gl.drawArrays(gl.LINES, 0, skyLineVertexCount);
 
         // Disable line attributes
