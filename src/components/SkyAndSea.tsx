@@ -505,7 +505,17 @@ export default function SkyAndSea() {
 
     window.addEventListener("resize", resize, { passive: true });
     window.visualViewport?.addEventListener("resize", resize, { passive: true });
-    resize();
+
+    // Initial setup - always rebuild sea grid on effect run (handles theme changes)
+    {
+      const vv = window.visualViewport;
+      const initW = Math.floor((vv?.width ?? window.innerWidth) * DPR);
+      const initH = Math.floor((vv?.height ?? window.innerHeight) * DPR);
+      canvas.width = initW;
+      canvas.height = initH;
+      gl.viewport(0, 0, initW, initH);
+      rebuildSeaGrid();
+    }
 
     // ========= Mouse State =========
     let skyMouseX = 0.5;
@@ -667,7 +677,7 @@ export default function SkyAndSea() {
         : [0x7a / 255, 0x5a / 255, 0x45 / 255],
       sea: isDark
         ? [0xd4 / 255, 0xa5 / 255, 0x74 / 255]
-        : [0x4a / 255, 0x38 / 255, 0x28 / 255],
+        : [0x6a / 255, 0x50 / 255, 0x38 / 255], // Slightly brighter brown for better visibility
       horizon: isDark
         ? [0xe0 / 255, 0x90 / 255, 0x60 / 255]
         : [0xc4 / 255, 0x85 / 255, 0x55 / 255],
@@ -843,6 +853,7 @@ export default function SkyAndSea() {
       gl.uniform1f(horizonLocs.uHorizonY, config.horizonY);
       gl.uniform3fv(horizonLocs.uHorizonColor, colors.horizon);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      gl.disableVertexAttribArray(horizonLocs.aPosition);
 
       // --- Draw Sky Lines ---
       if (skyLineVertexCount > 0) {
@@ -861,6 +872,10 @@ export default function SkyAndSea() {
 
         gl.uniform3fv(skyLineLocs.uLineColor, colors.skyLine);
         gl.drawArrays(gl.LINES, 0, skyLineVertexCount);
+
+        // Disable line attributes
+        gl.disableVertexAttribArray(skyLineLocs.aLinePos);
+        gl.disableVertexAttribArray(skyLineLocs.aLineAlpha);
       }
 
       // --- Draw Sky Particles ---
@@ -880,6 +895,10 @@ export default function SkyAndSea() {
       gl.uniform1f(skyParticleLocs.uHorizonY, config.horizonY);
 
       gl.drawArrays(gl.POINTS, 0, skyParticles.length);
+
+      // Disable sky attributes before switching to sea
+      gl.disableVertexAttribArray(skyParticleLocs.aPosition);
+      gl.disableVertexAttribArray(skyParticleLocs.aAlpha);
 
       // --- Draw Sea Particles ---
       gl.useProgram(seaProgram);
@@ -912,6 +931,7 @@ export default function SkyAndSea() {
       gl.uniform1f(seaLocs.uHorizonY!, config.horizonY);
 
       gl.drawArrays(gl.POINTS, 0, seaCount);
+      gl.disableVertexAttribArray(seaLocs.aPos);
 
       rafId = requestAnimationFrame(frame);
     }
