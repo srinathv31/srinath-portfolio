@@ -255,14 +255,10 @@ void main(){
 
     function resize() {
       if (!canvas || !gl) return;
-      // Use the larger of window dimensions or document dimensions to ensure full coverage
-      const w = Math.floor(
-        Math.max(window.innerWidth, document.documentElement.clientWidth) * DPR
-      );
-      const h = Math.floor(
-        Math.max(window.innerHeight, document.documentElement.clientHeight) *
-          DPR
-      );
+      // Use Visual Viewport API when available for accurate mobile dimensions
+      const vv = window.visualViewport;
+      const w = Math.floor((vv?.width ?? window.innerWidth) * DPR);
+      const h = Math.floor((vv?.height ?? window.innerHeight) * DPR);
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w;
         canvas.height = h;
@@ -271,6 +267,10 @@ void main(){
       }
     }
     window.addEventListener("resize", resize, { passive: true });
+    // Also listen for visualViewport resize events on mobile
+    window.visualViewport?.addEventListener("resize", resize, {
+      passive: true,
+    });
     resize();
 
     // ----- Attributes -----
@@ -485,6 +485,7 @@ void main(){
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", resize);
+      window.visualViewport?.removeEventListener("resize", resize);
       gl.bindBuffer(gl.ARRAY_BUFFER, null);
       gl.useProgram(null);
     };
@@ -500,8 +501,8 @@ void main(){
           position: "fixed",
           top: 0,
           left: 0,
-          width: "100%",
-          height: "100%",
+          width: "100vw",
+          height: "100dvh",
           outline: "none",
         }}
         aria-hidden="true"

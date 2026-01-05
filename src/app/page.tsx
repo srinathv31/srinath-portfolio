@@ -3,7 +3,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function HomePage() {
   return (
-    <main className="relative h-full w-full overflow-y-auto overflow-x-hidden">
+    <main className="relative w-full min-h-dvh overflow-x-hidden">
       <ParticleSea />
 
       {/* Theme toggle */}
@@ -12,7 +12,7 @@ export default function HomePage() {
       </div>
 
       {/* Main content grid */}
-      <div className="relative z-10 min-h-screen pointer-events-none">
+      <div className="relative z-10 min-h-dvh pointer-events-none">
         {/* Asymmetric layout container */}
         <div className="grid grid-cols-12 gap-4 min-h-screen px-6 md:px-10 lg:px-16">
           {/* Left vertical accent line */}
@@ -31,7 +31,7 @@ export default function HomePage() {
                   fontFamily: "var(--font-body)",
                 }}
               >
-                Developer & Creator
+                Creator & Engineer
               </span>
             </div>
 
@@ -198,6 +198,201 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Mock content sections for scroll testing */}
+      <div className="relative z-10 px-6 md:px-10 lg:px-16 pb-24">
+        {/* Projects Section */}
+        {/* <section className="py-24 border-t border-[var(--text-muted)]/20">
+          <h2
+            className="text-3xl md:text-4xl font-light mb-12"
+            style={{
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-display)",
+            }}
+          >
+            Selected Projects
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="p-6 rounded-lg border border-[var(--text-muted)]/20 backdrop-blur-sm"
+                style={{ background: "var(--bg-secondary)" }}
+              >
+                <div
+                  className="w-full h-48 rounded-md mb-4"
+                  style={{ background: "var(--text-muted)", opacity: 0.2 }}
+                />
+                <h3
+                  className="text-xl font-medium mb-2"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  Project {i}
+                </h3>
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+                  do eiusmod tempor incididunt ut labore.
+                </p>
+              </div>
+            ))}
+          </div>
+        </section> */}
+
+        {/* About Section */}
+        <section className="py-24 border-t border-[var(--text-muted)]/20">
+          <h2
+            className="text-3xl md:text-4xl font-light mb-12"
+            style={{
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-display)",
+            }}
+          >
+            About Me 👋
+          </h2>
+          <div className="max-w-2xl">
+            <p
+              className="text-lg leading-relaxed mb-6"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              I&apos;m an engineer who enjoys building intuitive and efficient
+              software solutions. My work lives at the intersection of
+              engineering, product thinking, and creativity, putting user
+              experience first.
+            </p>
+            <p
+              className="text-lg leading-relaxed mb-6"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              I spend most of my time working with TypeScript, Node.js, React,
+              and modern cloud infrastructure, but I&apos;m just as interested
+              in why something should be built as in how. I like projects where
+              I can take an idea from a rough concept to a polished,
+              production-ready solution.
+            </p>
+            <p
+              className="text-lg leading-relaxed mb-6"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Recently, I&apos;ve been focused on AI: creating agent-style
+              workflows, analytics, and internal tools that turn complex
+              information into reliable, usable outputs. I approach AI with a
+              production mindset—caring about orchestration, evaluation,
+              observability, and security—so systems are trustworthy,
+              explainable, and actually useful.
+            </p>
+
+            <ul
+              className="text-lg leading-relaxed space-y-3 ml-6 mb-8"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <li className="flex items-start gap-3">
+                <span className="text-xl">🤖</span>
+                <span>Designing AI agents and tool-driven workflows</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-xl">📊</span>
+                <span>
+                  Building analytics and evaluations to measure quality
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-xl">🔍</span>
+                <span>
+                  Implementing observability, guardrails, and safety controls
+                </span>
+              </li>
+            </ul>
+            <div>
+              <p
+                className="text-lg leading-relaxed mb-4"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Outside of technology, I like to:
+              </p>
+              <ul
+                className="text-lg leading-relaxed space-y-3 ml-6"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <li className="flex items-start gap-3">
+                  <span className="text-xl">📚</span>
+                  <span>Read</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-xl">💪</span>
+                  <span>Exercise</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-xl">✈️</span>
+                  <span>Travel</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-xl">🐾</span>
+                  <span>Spend time with my friend, Happy</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Experience Section */}
+        {/* <section className="py-24 border-t border-[var(--text-muted)]/20">
+          <h2
+            className="text-3xl md:text-4xl font-light mb-12"
+            style={{
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-display)",
+            }}
+          >
+            Experience
+          </h2>
+          <div className="space-y-8">
+            {[
+              { year: "2024", role: "Senior Developer", company: "Tech Corp" },
+              {
+                year: "2022",
+                role: "Full Stack Developer",
+                company: "StartupXYZ",
+              },
+              {
+                year: "2020",
+                role: "Frontend Developer",
+                company: "Agency Inc",
+              },
+            ].map((exp, i) => (
+              <div
+                key={i}
+                className="flex flex-col md:flex-row md:items-center gap-4 p-6 rounded-lg border border-[var(--text-muted)]/20"
+                style={{ background: "var(--bg-secondary)" }}
+              >
+                <span
+                  className="text-sm font-mono"
+                  style={{ color: "var(--accent)" }}
+                >
+                  {exp.year}
+                </span>
+                <div>
+                  <h3
+                    className="text-lg font-medium"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {exp.role}
+                  </h3>
+                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                    {exp.company}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section> */}
+
+        {/* Footer */}
+        <footer className="py-12 border-t border-[var(--text-muted)]/20 text-center">
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            © 2026 Srinath Venkatesh. All rights reserved.
+          </p>
+        </footer>
       </div>
     </main>
   );

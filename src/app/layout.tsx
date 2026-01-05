@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ViewportFix } from "@/components/ViewportFix";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -38,6 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${cormorant.variable} ${dmSans.variable} antialiased`}>
+        <ViewportFix />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

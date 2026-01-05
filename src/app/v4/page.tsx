@@ -12,7 +12,7 @@ export default function V4Page() {
       </div>
 
       {/* Main content grid */}
-      <div className="relative z-10 min-h-screen pointer-events-none">
+      <div className="relative z-10 min-h-dvh pointer-events-none">
         {/* Asymmetric layout container */}
         <div className="grid grid-cols-12 gap-4 min-h-screen px-6 md:px-10 lg:px-16">
           {/* Left vertical accent line */}
