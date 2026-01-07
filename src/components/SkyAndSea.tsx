@@ -175,7 +175,7 @@ export default function SkyAndSea() {
       varying float vLineAlpha;
 
       void main() {
-        float alphaMultiplier = uIsDark > 0.5 ? 0.3 : 0.5;
+        float alphaMultiplier = uIsDark > 0.5 ? 0.3 : 0.8;
         gl_FragColor = vec4(uLineColor, vLineAlpha * alphaMultiplier);
       }
     `;
@@ -622,7 +622,7 @@ export default function SkyAndSea() {
       const rect = canvas.getBoundingClientRect();
       const normalizedY = (e.clientY - rect.top) / rect.height;
 
-      if (normalizedY < config.seaStartY) {
+      if (normalizedY < config.horizonY) {
         // Sky region (above sea)
         targetSkyMouseX = (e.clientX - rect.left) / rect.width;
         targetSkyMouseY = normalizedY;
@@ -647,7 +647,7 @@ export default function SkyAndSea() {
       const rect = canvas.getBoundingClientRect();
       const normalizedY = (e.clientY - rect.top) / rect.height;
 
-      if (normalizedY >= config.seaStartY) {
+      if (normalizedY >= config.horizonY) {
         // Only create ripples in sea region
         const [u, v] = screenToSeaTile(e.clientX, e.clientY);
         addRipple(u, v);
@@ -659,7 +659,7 @@ export default function SkyAndSea() {
       const rect = canvas.getBoundingClientRect();
       const normalizedY = (touch.clientY - rect.top) / rect.height;
 
-      if (normalizedY < config.seaStartY) {
+      if (normalizedY < config.horizonY) {
         targetSkyMouseX = (touch.clientX - rect.left) / rect.width;
         targetSkyMouseY = normalizedY;
         skyMouseActive = true;
@@ -692,10 +692,10 @@ export default function SkyAndSea() {
     const colors = {
       skyParticle: isDark
         ? [0xd4 / 255, 0xa5 / 255, 0x74 / 255]
-        : [0x3a / 255, 0x2a / 255, 0x1a / 255], // Dark brown for light mode
+        : [0x1a / 255, 0x25 / 255, 0x2f / 255], // Near-black slate (#1a252f) for light mode
       skyLine: isDark
         ? [0xe0 / 255, 0x78 / 255, 0x56 / 255]
-        : [0x4a / 255, 0x3a / 255, 0x2a / 255], // Dark brown lines for light mode
+        : [0x15 / 255, 0x1f / 255, 0x28 / 255], // Very dark slate (#151f28) for light mode
       sea: isDark
         ? [0xd4 / 255, 0xa5 / 255, 0x74 / 255]
         : [0x6a / 255, 0x50 / 255, 0x38 / 255], // Slightly brighter brown for better visibility
@@ -942,7 +942,8 @@ export default function SkyAndSea() {
       gl.vertexAttribPointer(skyParticleLocs.aAlpha, 1, gl.FLOAT, false, 12, 8);
 
       gl.uniform1f(skyParticleLocs.uTime, elapsed);
-      gl.uniform1f(skyParticleLocs.uPointSize, config.skyPointSize);
+      const lightModePointSizeMultiplier = isDark ? 1 : 1.5;
+      gl.uniform1f(skyParticleLocs.uPointSize, config.skyPointSize * lightModePointSizeMultiplier);
       gl.uniform1f(skyParticleLocs.uDPR, DPR);
       gl.uniform3fv(skyParticleLocs.uParticleColor, colors.skyParticle);
       gl.uniform1f(skyParticleLocs.uHorizonY, config.horizonY);
