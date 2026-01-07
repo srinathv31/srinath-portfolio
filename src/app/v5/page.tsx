@@ -240,8 +240,8 @@ export default function V5Page() {
               Recently, I&apos;ve been focused on AI: creating agent-style
               workflows, analytics, and internal tools that turn complex
               information into reliable, usable outputs. I approach AI with a
-              production mindset—caring about orchestration, evaluation,
-              observability, and security—so systems are trustworthy,
+              production mindset, caring about orchestration, evaluation,
+              observability, and security, so systems are trustworthy,
               explainable, and actually useful.
             </p>
 
