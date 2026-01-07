@@ -11,6 +11,8 @@ interface SkyParticle {
   vy: number;
   baseVx: number;
   baseVy: number;
+  homeX: number;
+  homeY: number;
 }
 
 // Spatial hash for efficient neighbor detection (sky connections)
@@ -449,13 +451,17 @@ export default function SkyAndSea() {
       const speed = config.skyDriftSpeed * (0.5 + Math.random());
       const vx = Math.cos(angle) * speed;
       const vy = Math.sin(angle) * speed;
+      const x = Math.random();
+      const y = Math.random() * config.horizonY; // Only in sky region
       skyParticles.push({
-        x: Math.random(),
-        y: Math.random() * config.horizonY, // Only in sky region
+        x,
+        y,
         vx,
         vy,
         baseVx: vx,
         baseVy: vy,
+        homeX: x,
+        homeY: y,
       });
     }
 
@@ -739,18 +745,28 @@ export default function SkyAndSea() {
         let ax = 0,
           ay = 0;
 
-        // Mouse gravity for sky
+        // Mouse gravity for sky with repulsion zone
+        const MIN_DISTANCE = 0.04; // Particles won't collapse closer than this
         if (skyMouseActive) {
           const dx = skyMouseX - p.x;
           const dy = skyMouseY - p.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < config.skyMouseRadius && dist > 0.01) {
-            const influence =
-              (1 - dist / config.skyMouseRadius) *
-              (dist / config.skyMouseRadius);
-            ax += (dx / dist) * config.skyMouseStrength * influence * 4;
-            ay += (dy / dist) * config.skyMouseStrength * influence * 4;
+            if (dist < MIN_DISTANCE) {
+              // Repel when too close - prevents collapse
+              const repelStrength =
+                (1 - dist / MIN_DISTANCE) * config.skyMouseStrength * 8;
+              ax -= (dx / dist) * repelStrength;
+              ay -= (dy / dist) * repelStrength;
+            } else {
+              // Normal attraction
+              const influence =
+                (1 - dist / config.skyMouseRadius) *
+                (dist / config.skyMouseRadius);
+              ax += (dx / dist) * config.skyMouseStrength * influence * 4;
+              ay += (dy / dist) * config.skyMouseStrength * influence * 4;
+            }
           }
         }
 
@@ -761,6 +777,13 @@ export default function SkyAndSea() {
           p.vx += (p.baseVx - p.vx) * 0.005;
           p.vy += (p.baseVy - p.vy) * 0.005;
         }
+
+        // Return-to-home force (keeps constellation shape)
+        const homeForce = 0.0003;
+        const homeDx = p.homeX - p.x;
+        const homeDy = p.homeY - p.y;
+        p.vx += homeDx * homeForce;
+        p.vy += homeDy * homeForce;
 
         p.vx *= DAMPING;
         p.vy *= DAMPING;

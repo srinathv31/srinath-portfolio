@@ -11,6 +11,8 @@ interface Particle {
   vy: number;
   baseVx: number;
   baseVy: number;
+  homeX: number;
+  homeY: number;
 }
 
 // Spatial hash for efficient neighbor detection
@@ -225,13 +227,17 @@ export default function ConstellationNetwork() {
       const speed = config.driftSpeed * (0.5 + Math.random());
       const vx = Math.cos(angle) * speed;
       const vy = Math.sin(angle) * speed;
+      const x = Math.random();
+      const y = Math.random();
       particles.push({
-        x: Math.random(),
-        y: Math.random(),
+        x,
+        y,
         vx,
         vy,
         baseVx: vx,
         baseVy: vy,
+        homeX: x,
+        homeY: y,
       });
     }
 
@@ -349,17 +355,27 @@ export default function ConstellationNetwork() {
         let ax = 0,
           ay = 0;
 
-        // Mouse gravity
+        // Mouse gravity with repulsion zone
+        const MIN_DISTANCE = 0.04; // Particles won't collapse closer than this
         if (mouseActive) {
           const dx = mouseX - p.x;
           const dy = mouseY - p.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < config.mouseRadius && dist > 0.01) {
-            const influence =
-              (1 - dist / config.mouseRadius) * (dist / config.mouseRadius);
-            ax += (dx / dist) * config.mouseStrength * influence * 4;
-            ay += (dy / dist) * config.mouseStrength * influence * 4;
+            if (dist < MIN_DISTANCE) {
+              // Repel when too close - prevents collapse
+              const repelStrength =
+                (1 - dist / MIN_DISTANCE) * config.mouseStrength * 8;
+              ax -= (dx / dist) * repelStrength;
+              ay -= (dy / dist) * repelStrength;
+            } else {
+              // Normal attraction
+              const influence =
+                (1 - dist / config.mouseRadius) * (dist / config.mouseRadius);
+              ax += (dx / dist) * config.mouseStrength * influence * 4;
+              ay += (dy / dist) * config.mouseStrength * influence * 4;
+            }
           }
         }
 
@@ -372,6 +388,13 @@ export default function ConstellationNetwork() {
           p.vx += (p.baseVx - p.vx) * 0.005;
           p.vy += (p.baseVy - p.vy) * 0.005;
         }
+
+        // Return-to-home force (keeps constellation shape)
+        const homeForce = 0.0003;
+        const homeDx = p.homeX - p.x;
+        const homeDy = p.homeY - p.y;
+        p.vx += homeDx * homeForce;
+        p.vy += homeDy * homeForce;
 
         // Damping
         p.vx *= DAMPING;
