@@ -70,7 +70,8 @@ export default function SkyAndSea() {
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
-    const HORIZON_Y = 0.35; // 35% from top - more sea visible
+    const HORIZON_Y = 0.65; // 75% from top - horizon glow position
+    const SEA_START_Y = 0.35; // 55% from top - where sea particles begin
 
     const config = {
       // Sky configuration
@@ -85,8 +86,9 @@ export default function SkyAndSea() {
       seaSpacing: isMobile ? 20 : 26,
       seaPointSize: prefersReducedMotion ? 3.2 : 4.0,
       seaMouseRadius: 0.12,
-      // Horizon
+      // Horizon & Sea
       horizonY: HORIZON_Y,
+      seaStartY: SEA_START_Y,
     };
 
     // ========= WebGL Setup =========
@@ -198,7 +200,7 @@ export default function SkyAndSea() {
       uniform vec2 uMouse;
       uniform float uMouseActive;
       uniform float uMouseRadius;
-      uniform float uHorizonY;
+      uniform float uSeaStartY;
 
       const int MAX_R = 6;
       uniform int uRCnt;
@@ -271,16 +273,16 @@ export default function SkyAndSea() {
         vDepth = z2;
         vGlow = clamp(0.25 + 0.55 * abs(w) + 0.9 * extra + 0.8 * mouseEffect, 0.0, 1.8);
 
-        // Map sea to lower portion of screen (below horizon)
-        // horizonY is 0.35 meaning horizon is at 35% from top
+        // Map sea to lower portion of screen (below seaStartY)
+        // seaStartY is fraction from top where sea begins
         // In clip space: top = 1, bottom = -1
-        // Horizon in clip space = 1 - 2*horizonY = 0.3
-        // Sea needs to fill from horizonClip down to -1
-        float horizonClip = 1.0 - 2.0 * uHorizonY;
-        float seaHeight = horizonClip - (-1.0); // = horizonClip + 1
+        // Sea start in clip space = 1 - 2*seaStartY
+        // Sea needs to fill from seaStartClip down to -1
+        float seaStartClip = 1.0 - 2.0 * uSeaStartY;
+        float seaHeight = seaStartClip - (-1.0); // = seaStartClip + 1
 
-        // Scale ndcY to fit in sea region and offset to start at horizon
-        float scaledY = ndcY * seaHeight * 0.5 + (horizonClip - seaHeight * 0.5);
+        // Scale ndcY to fit in sea region and offset to start at seaStartY
+        float scaledY = ndcY * seaHeight * 0.5 + (seaStartClip - seaHeight * 0.5);
 
         gl_Position = vec4(-ndcX, scaledY, ndcZ, 1.0);
 
@@ -376,7 +378,12 @@ export default function SkyAndSea() {
     const seaProgram = createProgram(seaVert, seaFrag);
     const horizonProgram = createProgram(horizonVert, horizonFrag);
 
-    if (!skyParticleProgram || !skyLineProgram || !seaProgram || !horizonProgram) {
+    if (
+      !skyParticleProgram ||
+      !skyLineProgram ||
+      !seaProgram ||
+      !horizonProgram
+    ) {
       console.error("Failed to create shader programs");
       return;
     }
@@ -388,7 +395,10 @@ export default function SkyAndSea() {
       uTime: gl.getUniformLocation(skyParticleProgram, "uTime"),
       uPointSize: gl.getUniformLocation(skyParticleProgram, "uPointSize"),
       uDPR: gl.getUniformLocation(skyParticleProgram, "uDPR"),
-      uParticleColor: gl.getUniformLocation(skyParticleProgram, "uParticleColor"),
+      uParticleColor: gl.getUniformLocation(
+        skyParticleProgram,
+        "uParticleColor"
+      ),
       uHorizonY: gl.getUniformLocation(skyParticleProgram, "uHorizonY"),
     };
 
@@ -422,7 +432,7 @@ export default function SkyAndSea() {
       uMouse: gl.getUniformLocation(seaProgram, "uMouse"),
       uMouseActive: gl.getUniformLocation(seaProgram, "uMouseActive"),
       uMouseRadius: gl.getUniformLocation(seaProgram, "uMouseRadius"),
-      uHorizonY: gl.getUniformLocation(seaProgram, "uHorizonY"),
+      uSeaStartY: gl.getUniformLocation(seaProgram, "uSeaStartY"),
     };
 
     const horizonLocs = {
@@ -507,7 +517,9 @@ export default function SkyAndSea() {
     }
 
     window.addEventListener("resize", resize, { passive: true });
-    window.visualViewport?.addEventListener("resize", resize, { passive: true });
+    window.visualViewport?.addEventListener("resize", resize, {
+      passive: true,
+    });
 
     // Initial setup - always rebuild sea grid on effect run (handles theme changes)
     {
@@ -567,9 +579,9 @@ export default function SkyAndSea() {
       const screenX = (clientX - rect.left) / rect.width;
       const screenY = (clientY - rect.top) / rect.height;
 
-      // Remap Y from sea region [horizonY, 1] to full range [0, 1]
+      // Remap Y from sea region [seaStartY, 1] to full range [0, 1]
       // Then convert to clip space [-1, 1]
-      const seaY = (screenY - config.horizonY) / (1 - config.horizonY);
+      const seaY = (screenY - config.seaStartY) / (1 - config.seaStartY);
       const nx = -(screenX * 2 - 1);
       const ny = seaY * 2 - 1;
 
@@ -604,8 +616,8 @@ export default function SkyAndSea() {
       const rect = canvas.getBoundingClientRect();
       const normalizedY = (e.clientY - rect.top) / rect.height;
 
-      if (normalizedY < config.horizonY) {
-        // Sky region
+      if (normalizedY < config.seaStartY) {
+        // Sky region (above sea)
         targetSkyMouseX = (e.clientX - rect.left) / rect.width;
         targetSkyMouseY = normalizedY;
         skyMouseActive = true;
@@ -629,7 +641,7 @@ export default function SkyAndSea() {
       const rect = canvas.getBoundingClientRect();
       const normalizedY = (e.clientY - rect.top) / rect.height;
 
-      if (normalizedY >= config.horizonY) {
+      if (normalizedY >= config.seaStartY) {
         // Only create ripples in sea region
         const [u, v] = screenToSeaTile(e.clientX, e.clientY);
         addRipple(u, v);
@@ -641,7 +653,7 @@ export default function SkyAndSea() {
       const rect = canvas.getBoundingClientRect();
       const normalizedY = (touch.clientY - rect.top) / rect.height;
 
-      if (normalizedY < config.horizonY) {
+      if (normalizedY < config.seaStartY) {
         targetSkyMouseX = (touch.clientX - rect.left) / rect.width;
         targetSkyMouseY = normalizedY;
         skyMouseActive = true;
@@ -871,7 +883,14 @@ export default function SkyAndSea() {
         gl.enableVertexAttribArray(skyLineLocs.aLinePos);
         gl.vertexAttribPointer(skyLineLocs.aLinePos, 2, gl.FLOAT, false, 12, 0);
         gl.enableVertexAttribArray(skyLineLocs.aLineAlpha);
-        gl.vertexAttribPointer(skyLineLocs.aLineAlpha, 1, gl.FLOAT, false, 12, 8);
+        gl.vertexAttribPointer(
+          skyLineLocs.aLineAlpha,
+          1,
+          gl.FLOAT,
+          false,
+          12,
+          8
+        );
 
         gl.uniform3fv(skyLineLocs.uLineColor, colors.skyLine);
         gl.uniform1f(skyLineLocs.uIsDark, isDark ? 1.0 : 0.0);
@@ -888,7 +907,14 @@ export default function SkyAndSea() {
       gl.bufferData(gl.ARRAY_BUFFER, skyParticleData, gl.DYNAMIC_DRAW);
 
       gl.enableVertexAttribArray(skyParticleLocs.aPosition);
-      gl.vertexAttribPointer(skyParticleLocs.aPosition, 2, gl.FLOAT, false, 12, 0);
+      gl.vertexAttribPointer(
+        skyParticleLocs.aPosition,
+        2,
+        gl.FLOAT,
+        false,
+        12,
+        0
+      );
       gl.enableVertexAttribArray(skyParticleLocs.aAlpha);
       gl.vertexAttribPointer(skyParticleLocs.aAlpha, 1, gl.FLOAT, false, 12, 8);
 
@@ -932,7 +958,7 @@ export default function SkyAndSea() {
       gl.uniform2f(seaLocs.uMouse!, seaMouseX, seaMouseY);
       gl.uniform1f(seaLocs.uMouseActive!, seaMouseActive ? 1.0 : 0.0);
       gl.uniform1f(seaLocs.uMouseRadius!, config.seaMouseRadius);
-      gl.uniform1f(seaLocs.uHorizonY!, config.horizonY);
+      gl.uniform1f(seaLocs.uSeaStartY!, config.seaStartY);
 
       gl.drawArrays(gl.POINTS, 0, seaCount);
       gl.disableVertexAttribArray(seaLocs.aPos);
