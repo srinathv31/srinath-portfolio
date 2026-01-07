@@ -1,10 +1,10 @@
-import SkyAndSea from "@/components/SkyAndSea";
+import ParticleSea from "@/components/ParticleSea";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-export default function V5Page() {
+export default function HomePage() {
   return (
     <main className="relative w-full min-h-dvh overflow-x-hidden">
-      <SkyAndSea />
+      <ParticleSea />
 
       {/* Theme toggle */}
       <div className="fixed top-6 right-6 z-50 animate-fade-up-4">
@@ -202,6 +202,43 @@ export default function V5Page() {
 
       {/* Mock content sections for scroll testing */}
       <div className="relative z-10 px-6 md:px-10 lg:px-16 pb-24">
+        {/* Projects Section */}
+        {/* <section className="py-24 border-t border-[var(--text-muted)]/20">
+          <h2
+            className="text-3xl md:text-4xl font-light mb-12"
+            style={{
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-display)",
+            }}
+          >
+            Selected Projects
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="p-6 rounded-lg border border-[var(--text-muted)]/20 backdrop-blur-sm"
+                style={{ background: "var(--bg-secondary)" }}
+              >
+                <div
+                  className="w-full h-48 rounded-md mb-4"
+                  style={{ background: "var(--text-muted)", opacity: 0.2 }}
+                />
+                <h3
+                  className="text-xl font-medium mb-2"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  Project {i}
+                </h3>
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+                  do eiusmod tempor incididunt ut labore.
+                </p>
+              </div>
+            ))}
+          </div>
+        </section> */}
+
         {/* About Section */}
         <section className="py-24 border-t border-[var(--text-muted)]/20">
           <h2
@@ -240,8 +277,8 @@ export default function V5Page() {
               Recently, I&apos;ve been focused on AI: creating agent-style
               workflows, analytics, and internal tools that turn complex
               information into reliable, usable outputs. I approach AI with a
-              production mindset, caring about orchestration, evaluation,
-              observability, and security, so systems are trustworthy,
+              production mindset—caring about orchestration, evaluation,
+              observability, and security—so systems are trustworthy,
               explainable, and actually useful.
             </p>
 
@@ -297,6 +334,58 @@ export default function V5Page() {
             </div>
           </div>
         </section>
+
+        {/* Experience Section */}
+        {/* <section className="py-24 border-t border-[var(--text-muted)]/20">
+          <h2
+            className="text-3xl md:text-4xl font-light mb-12"
+            style={{
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-display)",
+            }}
+          >
+            Experience
+          </h2>
+          <div className="space-y-8">
+            {[
+              { year: "2024", role: "Senior Developer", company: "Tech Corp" },
+              {
+                year: "2022",
+                role: "Full Stack Developer",
+                company: "StartupXYZ",
+              },
+              {
+                year: "2020",
+                role: "Frontend Developer",
+                company: "Agency Inc",
+              },
+            ].map((exp, i) => (
+              <div
+                key={i}
+                className="flex flex-col md:flex-row md:items-center gap-4 p-6 rounded-lg border border-[var(--text-muted)]/20"
+                style={{ background: "var(--bg-secondary)" }}
+              >
+                <span
+                  className="text-sm font-mono"
+                  style={{ color: "var(--accent)" }}
+                >
+                  {exp.year}
+                </span>
+                <div>
+                  <h3
+                    className="text-lg font-medium"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {exp.role}
+                  </h3>
+                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                    {exp.company}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section> */}
 
         {/* Footer */}
         <footer className="py-12 border-t border-[var(--text-muted)]/20 text-center">

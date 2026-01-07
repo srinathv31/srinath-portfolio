@@ -193,7 +193,7 @@ export default function V4Page() {
                   fontFamily: "var(--font-body)",
                 }}
               >
-                San Francisco Bay Area
+                New York City
               </p>
             </div>
           </div>
