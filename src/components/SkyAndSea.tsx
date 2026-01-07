@@ -89,6 +89,21 @@ export default function SkyAndSea() {
       // Horizon & Sea
       horizonY: HORIZON_Y,
       seaStartY: SEA_START_Y,
+      // Planet configuration
+      planet: {
+        centerX: 0.85,
+        centerY: 0.12,
+        size: isMobile ? 0.18 : 0.22,
+      },
+      // Orbiting stars configuration
+      orbitStars: {
+        count: isMobile ? 8 : 12,
+        orbits: isMobile ? 2 : 3,
+        baseRadius: isMobile ? 60 : 80,
+        radiusIncrement: isMobile ? 25 : 35,
+        baseSpeed: 0.3,
+        starSize: isMobile ? 2.5 : 3.0,
+      },
     };
 
     // ========= WebGL Setup =========
@@ -337,6 +352,147 @@ export default function SkyAndSea() {
       }
     `;
 
+    // --- Planet Shaders ---
+    const planetVert = `
+      precision mediump float;
+      attribute vec2 aPosition;
+      uniform float uDPR;
+      uniform float uPlanetSize;
+      uniform float uViewportMin;
+
+      void main() {
+        vec2 clipPos = aPosition * 2.0 - 1.0;
+        gl_Position = vec4(clipPos.x, -clipPos.y, 0.0, 1.0);
+        gl_PointSize = uPlanetSize * uViewportMin * uDPR;
+      }
+    `;
+
+    const planetFrag = `
+      precision mediump float;
+      uniform float uTime;
+      uniform vec3 uPlanetColor;
+      uniform vec3 uGlowColor;
+      uniform float uIsDark;
+
+      void main() {
+        vec2 uv = gl_PointCoord * 2.0 - 1.0;
+        float r = length(uv);
+
+        // Hard discard outside visible radius
+        if (r > 1.0) discard;
+
+        // Planet body - larger, more solid
+        float planetRadius = 0.85;
+        float planetBody = 1.0 - smoothstep(planetRadius - 0.02, planetRadius, r);
+
+        // Sphere shading - 3D gradient from top-left light
+        vec2 lightDir = normalize(vec2(-0.5, -0.5));
+        float lightDist = length(uv - lightDir * 0.3);
+        float shade = 1.0 - lightDist * 0.6;
+        shade = clamp(shade, 0.3, 1.0);
+
+        // Subtle surface bands (like gas giant)
+        float bands = sin(uv.y * 12.0 + uTime * 0.05) * 0.08;
+        shade += bands * planetBody;
+
+        // Thin corona glow at edge
+        float glowStart = planetRadius - 0.05;
+        float glow = smoothstep(glowStart, planetRadius, r) * (1.0 - smoothstep(planetRadius, 1.0, r));
+        glow *= 0.4;
+
+        // Combine colors
+        vec3 planetCol = uPlanetColor * shade * planetBody;
+        vec3 glowCol = uGlowColor * glow;
+        vec3 finalColor = planetCol + glowCol;
+
+        // Alpha: solid planet with soft edge
+        float alpha = planetBody + glow * 0.5;
+        if (alpha < 0.01) discard;
+
+        gl_FragColor = vec4(finalColor, alpha);
+      }
+    `;
+
+    // --- Saturn Ring Line Shaders ---
+    const ringLineVert = `
+      precision mediump float;
+      attribute vec2 aPosition;
+      attribute float aAlpha;
+      varying float vAlpha;
+
+      void main() {
+        vec2 clipPos = aPosition * 2.0 - 1.0;
+        vAlpha = aAlpha;
+        gl_Position = vec4(clipPos.x, -clipPos.y, 0.0, 1.0);
+      }
+    `;
+
+    const ringLineFrag = `
+      precision mediump float;
+      uniform vec3 uRingColor;
+      varying float vAlpha;
+
+      void main() {
+        gl_FragColor = vec4(uRingColor, vAlpha * 0.6);
+      }
+    `;
+
+    // --- Ring Particle Shaders (bright dots on rings) ---
+    const ringParticleVert = `
+      precision mediump float;
+      attribute vec2 aPosition;
+      attribute float aPhase;
+      attribute float aRadiusX;
+      attribute float aRadiusY;
+      attribute float aSpeed;
+      uniform float uTime;
+      uniform vec2 uPlanetCenter;
+      uniform float uDPR;
+      uniform float uParticleSize;
+      uniform float uTilt;
+      varying float vAlpha;
+
+      void main() {
+        float angle = uTime * aSpeed + aPhase;
+
+        // Elliptical orbit with tilt
+        float x = cos(angle) * aRadiusX;
+        float y = sin(angle) * aRadiusY * uTilt;
+
+        vec2 pos = uPlanetCenter + vec2(x, y);
+        vec2 clipPos = pos * 2.0 - 1.0;
+
+        // Brighter when in front (sin(angle) > 0)
+        float depth = sin(angle);
+        vAlpha = 0.6 + 0.4 * max(0.0, depth);
+
+        gl_Position = vec4(clipPos.x, -clipPos.y, 0.0, 1.0);
+        gl_PointSize = uParticleSize * uDPR * (0.8 + 0.2 * max(0.0, depth));
+      }
+    `;
+
+    const ringParticleFrag = `
+      precision mediump float;
+      uniform vec3 uParticleColor;
+      varying float vAlpha;
+
+      void main() {
+        vec2 uv = gl_PointCoord * 2.0 - 1.0;
+        float r = length(uv);
+
+        if (r > 1.0) discard;
+
+        // Bright core with soft glow
+        float core = exp(-r * r * 2.0);
+        float glow = 1.0 - smoothstep(0.0, 1.0, r);
+
+        vec3 color = uParticleColor * (core + glow * 0.3);
+        float alpha = (core * 0.8 + glow * 0.4) * vAlpha;
+
+        gl_FragColor = vec4(color, alpha);
+      }
+    `;
+
     // ========= Shader Compilation =========
     function compileShader(type: number, source: string): WebGLShader | null {
       const shader = gl!.createShader(type);
@@ -377,12 +533,18 @@ export default function SkyAndSea() {
     const skyLineProgram = createProgram(skyLineVert, skyLineFrag);
     const seaProgram = createProgram(seaVert, seaFrag);
     const horizonProgram = createProgram(horizonVert, horizonFrag);
+    const planetProgram = createProgram(planetVert, planetFrag);
+    const ringLineProgram = createProgram(ringLineVert, ringLineFrag);
+    const ringParticleProgram = createProgram(ringParticleVert, ringParticleFrag);
 
     if (
       !skyParticleProgram ||
       !skyLineProgram ||
       !seaProgram ||
-      !horizonProgram
+      !horizonProgram ||
+      !planetProgram ||
+      !ringLineProgram ||
+      !ringParticleProgram
     ) {
       console.error("Failed to create shader programs");
       return;
@@ -440,6 +602,37 @@ export default function SkyAndSea() {
       uTime: gl.getUniformLocation(horizonProgram, "uTime"),
       uHorizonY: gl.getUniformLocation(horizonProgram, "uHorizonY"),
       uHorizonColor: gl.getUniformLocation(horizonProgram, "uHorizonColor"),
+    };
+
+    const planetLocs = {
+      aPosition: gl.getAttribLocation(planetProgram, "aPosition"),
+      uTime: gl.getUniformLocation(planetProgram, "uTime"),
+      uDPR: gl.getUniformLocation(planetProgram, "uDPR"),
+      uPlanetSize: gl.getUniformLocation(planetProgram, "uPlanetSize"),
+      uViewportMin: gl.getUniformLocation(planetProgram, "uViewportMin"),
+      uPlanetColor: gl.getUniformLocation(planetProgram, "uPlanetColor"),
+      uGlowColor: gl.getUniformLocation(planetProgram, "uGlowColor"),
+      uIsDark: gl.getUniformLocation(planetProgram, "uIsDark"),
+    };
+
+    const ringLineLocs = {
+      aPosition: gl.getAttribLocation(ringLineProgram, "aPosition"),
+      aAlpha: gl.getAttribLocation(ringLineProgram, "aAlpha"),
+      uRingColor: gl.getUniformLocation(ringLineProgram, "uRingColor"),
+    };
+
+    const ringParticleLocs = {
+      aPosition: gl.getAttribLocation(ringParticleProgram, "aPosition"),
+      aPhase: gl.getAttribLocation(ringParticleProgram, "aPhase"),
+      aRadiusX: gl.getAttribLocation(ringParticleProgram, "aRadiusX"),
+      aRadiusY: gl.getAttribLocation(ringParticleProgram, "aRadiusY"),
+      aSpeed: gl.getAttribLocation(ringParticleProgram, "aSpeed"),
+      uTime: gl.getUniformLocation(ringParticleProgram, "uTime"),
+      uPlanetCenter: gl.getUniformLocation(ringParticleProgram, "uPlanetCenter"),
+      uDPR: gl.getUniformLocation(ringParticleProgram, "uDPR"),
+      uParticleSize: gl.getUniformLocation(ringParticleProgram, "uParticleSize"),
+      uTilt: gl.getUniformLocation(ringParticleProgram, "uTilt"),
+      uParticleColor: gl.getUniformLocation(ringParticleProgram, "uParticleColor"),
     };
 
     // ========= Initialize Sky Particles =========
@@ -501,6 +694,92 @@ export default function SkyAndSea() {
     const horizonBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, horizonBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, horizonQuad, gl.STATIC_DRAW);
+
+    // Planet buffer (single point)
+    const planetPosition = new Float32Array([
+      config.planet.centerX,
+      config.planet.centerY,
+    ]);
+    const planetBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, planetBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, planetPosition, gl.STATIC_DRAW);
+
+    // Saturn ring configuration
+    const RING_SEGMENTS = 64;
+    const RING_COUNT = 3;
+    const RING_TILT = 0.35; // Tilt factor for perspective (0 = edge-on, 1 = face-on)
+    const ringRadii = [0.06, 0.08, 0.1]; // Normalized radii
+    const particlesPerRing = isMobile ? 3 : 4;
+    const HALF_SEGMENTS = RING_SEGMENTS / 2;
+
+    // Split ring buffers for depth effect:
+    // - Back half (angles π to 2π) drawn BEFORE planet
+    // - Front half (angles 0 to π) drawn AFTER planet
+    // Layout per vertex: [x, y, alpha]
+
+    const ringLineBackVertices: number[] = [];
+    const ringLineFrontVertices: number[] = [];
+
+    for (let ring = 0; ring < RING_COUNT; ring++) {
+      const radiusX = ringRadii[ring];
+      const radiusY = radiusX * RING_TILT;
+      const alpha = 0.8 - ring * 0.15;
+
+      // Back half: angles from 0 to π (top of ellipse = far side, behind planet)
+      for (let i = 0; i <= HALF_SEGMENTS; i++) {
+        const angle = (i / HALF_SEGMENTS) * Math.PI;
+        const x = config.planet.centerX + Math.cos(angle) * radiusX;
+        const y = config.planet.centerY + Math.sin(angle) * radiusY;
+        ringLineBackVertices.push(x, y, alpha);
+      }
+
+      // Front half: angles from π to 2π (bottom of ellipse = near side, in front)
+      for (let i = 0; i <= HALF_SEGMENTS; i++) {
+        const angle = Math.PI + (i / HALF_SEGMENTS) * Math.PI;
+        const x = config.planet.centerX + Math.cos(angle) * radiusX;
+        const y = config.planet.centerY + Math.sin(angle) * radiusY;
+        ringLineFrontVertices.push(x, y, alpha);
+      }
+    }
+
+    const ringLineBackData = new Float32Array(ringLineBackVertices);
+    const ringLineBackBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, ringLineBackBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, ringLineBackData, gl.STATIC_DRAW);
+
+    const ringLineFrontData = new Float32Array(ringLineFrontVertices);
+    const ringLineFrontBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, ringLineFrontBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, ringLineFrontData, gl.STATIC_DRAW);
+
+    const vertsPerHalfRing = HALF_SEGMENTS + 1;
+
+    // Ring particle buffer - bright dots traveling on rings
+    // Layout per particle: [x, y, phase, radiusX, radiusY, speed]
+    const ringParticleVertices: number[] = [];
+    for (let ring = 0; ring < RING_COUNT; ring++) {
+      const radiusX = ringRadii[ring];
+      const radiusY = radiusX * RING_TILT;
+      const speed = config.orbitStars.baseSpeed * (1 - ring * 0.1);
+
+      for (let p = 0; p < particlesPerRing; p++) {
+        const phase = (p / particlesPerRing) * Math.PI * 2 + ring * 0.5;
+        ringParticleVertices.push(
+          config.planet.centerX,
+          config.planet.centerY,
+          phase,
+          radiusX,
+          radiusY,
+          speed
+        );
+      }
+    }
+
+    const ringParticleCount = RING_COUNT * particlesPerRing;
+    const ringParticleData = new Float32Array(ringParticleVertices);
+    const ringParticleBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, ringParticleBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, ringParticleData, gl.STATIC_DRAW);
 
     // ========= Resize Handler =========
     function resize() {
@@ -696,6 +975,15 @@ export default function SkyAndSea() {
       horizon: isDark
         ? [0xe0 / 255, 0x90 / 255, 0x60 / 255]
         : [0xc4 / 255, 0x85 / 255, 0x55 / 255],
+      planet: isDark
+        ? [0.85, 0.65, 0.45] // Warm orange-brown
+        : [0.35, 0.28, 0.2], // Dark brown
+      planetGlow: isDark
+        ? [0.9, 0.5, 0.3] // Orange glow
+        : [0.5, 0.35, 0.25], // Subtle brown
+      orbitStars: isDark
+        ? [0.95, 0.85, 0.7] // Warm white-gold
+        : [0.45, 0.35, 0.25], // Brown tones
     };
 
     // ========= GL State =========
@@ -930,6 +1218,134 @@ export default function SkyAndSea() {
       gl.disableVertexAttribArray(skyParticleLocs.aPosition);
       gl.disableVertexAttribArray(skyParticleLocs.aAlpha);
 
+      // --- Draw Ring Back Half (behind planet) ---
+      gl.useProgram(ringLineProgram);
+      gl.bindBuffer(gl.ARRAY_BUFFER, ringLineBackBuffer);
+
+      gl.enableVertexAttribArray(ringLineLocs.aPosition);
+      gl.vertexAttribPointer(ringLineLocs.aPosition, 2, gl.FLOAT, false, 12, 0);
+      gl.enableVertexAttribArray(ringLineLocs.aAlpha);
+      gl.vertexAttribPointer(ringLineLocs.aAlpha, 1, gl.FLOAT, false, 12, 8);
+
+      gl.uniform3fv(ringLineLocs.uRingColor, colors.orbitStars);
+
+      // Draw back half of each ring as LINE_STRIP
+      for (let ring = 0; ring < RING_COUNT; ring++) {
+        gl.drawArrays(gl.LINE_STRIP, ring * vertsPerHalfRing, vertsPerHalfRing);
+      }
+
+      gl.disableVertexAttribArray(ringLineLocs.aPosition);
+      gl.disableVertexAttribArray(ringLineLocs.aAlpha);
+
+      // --- Draw Planet ---
+      // Switch to standard alpha blending so planet OCCLUDES back ring
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      gl.useProgram(planetProgram);
+      gl.bindBuffer(gl.ARRAY_BUFFER, planetBuffer);
+      gl.enableVertexAttribArray(planetLocs.aPosition);
+      gl.vertexAttribPointer(planetLocs.aPosition, 2, gl.FLOAT, false, 0, 0);
+
+      const viewportMin = Math.min(canvas.width, canvas.height) / DPR;
+      gl.uniform1f(planetLocs.uTime, elapsed);
+      gl.uniform1f(planetLocs.uDPR, DPR);
+      gl.uniform1f(planetLocs.uPlanetSize, config.planet.size);
+      gl.uniform1f(planetLocs.uViewportMin, viewportMin);
+      gl.uniform3fv(planetLocs.uPlanetColor, colors.planet);
+      gl.uniform3fv(planetLocs.uGlowColor, colors.planetGlow);
+      gl.uniform1f(planetLocs.uIsDark, isDark ? 1.0 : 0.0);
+
+      gl.drawArrays(gl.POINTS, 0, 1);
+      gl.disableVertexAttribArray(planetLocs.aPosition);
+
+      // Restore additive blending for front ring (if dark mode)
+      if (isDark) {
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+      }
+
+      // --- Draw Ring Front Half (in front of planet) ---
+      gl.useProgram(ringLineProgram);
+      gl.bindBuffer(gl.ARRAY_BUFFER, ringLineFrontBuffer);
+
+      gl.enableVertexAttribArray(ringLineLocs.aPosition);
+      gl.vertexAttribPointer(ringLineLocs.aPosition, 2, gl.FLOAT, false, 12, 0);
+      gl.enableVertexAttribArray(ringLineLocs.aAlpha);
+      gl.vertexAttribPointer(ringLineLocs.aAlpha, 1, gl.FLOAT, false, 12, 8);
+
+      gl.uniform3fv(ringLineLocs.uRingColor, colors.orbitStars);
+
+      // Draw front half of each ring as LINE_STRIP
+      for (let ring = 0; ring < RING_COUNT; ring++) {
+        gl.drawArrays(gl.LINE_STRIP, ring * vertsPerHalfRing, vertsPerHalfRing);
+      }
+
+      gl.disableVertexAttribArray(ringLineLocs.aPosition);
+      gl.disableVertexAttribArray(ringLineLocs.aAlpha);
+
+      // --- Draw Ring Particles ---
+      gl.useProgram(ringParticleProgram);
+      gl.bindBuffer(gl.ARRAY_BUFFER, ringParticleBuffer);
+
+      // Attributes: [x, y, phase, radiusX, radiusY, speed] - stride = 24 bytes
+      gl.enableVertexAttribArray(ringParticleLocs.aPosition);
+      gl.vertexAttribPointer(
+        ringParticleLocs.aPosition,
+        2,
+        gl.FLOAT,
+        false,
+        24,
+        0
+      );
+      gl.enableVertexAttribArray(ringParticleLocs.aPhase);
+      gl.vertexAttribPointer(ringParticleLocs.aPhase, 1, gl.FLOAT, false, 24, 8);
+      gl.enableVertexAttribArray(ringParticleLocs.aRadiusX);
+      gl.vertexAttribPointer(
+        ringParticleLocs.aRadiusX,
+        1,
+        gl.FLOAT,
+        false,
+        24,
+        12
+      );
+      gl.enableVertexAttribArray(ringParticleLocs.aRadiusY);
+      gl.vertexAttribPointer(
+        ringParticleLocs.aRadiusY,
+        1,
+        gl.FLOAT,
+        false,
+        24,
+        16
+      );
+      gl.enableVertexAttribArray(ringParticleLocs.aSpeed);
+      gl.vertexAttribPointer(
+        ringParticleLocs.aSpeed,
+        1,
+        gl.FLOAT,
+        false,
+        24,
+        20
+      );
+
+      gl.uniform1f(ringParticleLocs.uTime, elapsed);
+      gl.uniform2f(
+        ringParticleLocs.uPlanetCenter,
+        config.planet.centerX,
+        config.planet.centerY
+      );
+      gl.uniform1f(ringParticleLocs.uDPR, DPR);
+      gl.uniform1f(ringParticleLocs.uParticleSize, config.orbitStars.starSize);
+      gl.uniform1f(ringParticleLocs.uTilt, RING_TILT);
+      gl.uniform3fv(ringParticleLocs.uParticleColor, colors.orbitStars);
+
+      gl.drawArrays(gl.POINTS, 0, ringParticleCount);
+
+      // Disable ring particle attributes
+      gl.disableVertexAttribArray(ringParticleLocs.aPosition);
+      gl.disableVertexAttribArray(ringParticleLocs.aPhase);
+      gl.disableVertexAttribArray(ringParticleLocs.aRadiusX);
+      gl.disableVertexAttribArray(ringParticleLocs.aRadiusY);
+      gl.disableVertexAttribArray(ringParticleLocs.aSpeed);
+
       // --- Draw Sea Particles ---
       gl.useProgram(seaProgram);
       gl.bindBuffer(gl.ARRAY_BUFFER, seaBuffer);
@@ -982,10 +1398,17 @@ export default function SkyAndSea() {
       gl.deleteBuffer(skyLineBuffer);
       gl.deleteBuffer(seaBuffer);
       gl.deleteBuffer(horizonBuffer);
+      gl.deleteBuffer(planetBuffer);
+      gl.deleteBuffer(ringLineBackBuffer);
+      gl.deleteBuffer(ringLineFrontBuffer);
+      gl.deleteBuffer(ringParticleBuffer);
       gl.deleteProgram(skyParticleProgram);
       gl.deleteProgram(skyLineProgram);
       gl.deleteProgram(seaProgram);
       gl.deleteProgram(horizonProgram);
+      gl.deleteProgram(planetProgram);
+      gl.deleteProgram(ringLineProgram);
+      gl.deleteProgram(ringParticleProgram);
     };
   }, [resolvedTheme]);
 
